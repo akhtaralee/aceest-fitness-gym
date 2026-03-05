@@ -4,7 +4,7 @@ A **Flask-based** fitness and gym management web application with a fully automa
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure Described
 
 ```
 ├── app.py                        # Flask web application (source code)
@@ -22,7 +22,7 @@ A **Flask-based** fitness and gym management web application with a fully automa
 
 ---
 
-## 🚀 Features
+## Features
 
 | Feature | Description |
 |---------|-------------|
@@ -34,11 +34,11 @@ A **Flask-based** fitness and gym management web application with a fully automa
 
 ---
 
-## 🛠️ Local Setup & Execution
+## Local Setup & Execution
 
 ### Prerequisites
 
-* Python 3.10+ installed
+* Python 3.10+ installed in your system.
 * Docker installed (for containerised runs)
 
 ### 1. Clone the repository
@@ -52,9 +52,9 @@ cd aceest-fitness-gym
 
 ```bash
 python -m venv venv
-# Windows
+# for  Windows
 venv\Scripts\activate
-# macOS / Linux
+# for macOS / Linux
 source venv/bin/activate
 
 pip install -r requirements.txt
@@ -77,10 +77,10 @@ docker run -p 5000:5000 aceest-fitness-gym
 
 ---
 
-## 🧪 Running Tests Manually
+## Running Tests Manually
 
 ```bash
-# Activate the virtual environment first, then:
+
 pytest test_app.py -v
 ```
 
@@ -100,7 +100,7 @@ pytest test_app.py -v
 
 ---
 
-## 🔧 Jenkins Integration (BUILD Phase)
+## Jenkins Integration (BUILD Phase)
 
 ### Overview
 
@@ -130,7 +130,7 @@ Checkout → Setup Python Env → Lint (Flake8) → Unit Tests (Pytest) → Buil
 
 ---
 
-## ⚙️ GitHub Actions CI/CD Pipeline
+## GitHub Actions CI/CD Pipeline
 
 ### Trigger
 
@@ -158,7 +158,7 @@ push / PR
 
 ---
 
-## 🗂️ Version History (Legacy Desktop App)
+## Version History (Legacy Desktop App)
 
 | Version | Highlights |
 |---------|-----------|
@@ -175,7 +175,7 @@ push / PR
 
 ---
 
-## 📜 License
+## License
 
 This project is for academic / assignment purposes.
 

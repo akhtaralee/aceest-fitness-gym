@@ -7,9 +7,6 @@ from flask import Flask, jsonify, request, render_template_string
 
 app = Flask(__name__)
 
-# ─────────────────────────────────────────────
-# In-memory data store (replaces SQLite for web)
-# ─────────────────────────────────────────────
 
 clients_db = {}
 
@@ -88,9 +85,9 @@ PROGRAMS = {
 }
 
 
-# ─────────────────────────────────────────────
+
 # Utility helpers
-# ─────────────────────────────────────────────
+
 
 
 def calculate_calories(weight: float, program_key: str) -> int:
@@ -125,9 +122,7 @@ def bmi_category(bmi: float) -> str:
         return "Obese"
 
 
-# ─────────────────────────────────────────────
-# HTML template (single-page)
-# ─────────────────────────────────────────────
+# HTML template 
 
 
 INDEX_HTML = """
@@ -190,9 +185,9 @@ INDEX_HTML = """
 </html>
 """
 
-# ─────────────────────────────────────────────
+
 # Routes
-# ─────────────────────────────────────────────
+
 
 
 @app.route("/")
@@ -224,7 +219,7 @@ def get_program(program_key):
     return jsonify(program)
 
 
-# --- Calorie Calculator ----------------------------------------------------
+# --- Calorie Calculator 
 
 @app.route("/api/calculate_calories", methods=["POST"])
 def api_calculate_calories():
@@ -247,8 +242,7 @@ def api_calculate_calories():
     return jsonify({"calories": calories, "program_key": program_key, "weight": weight})
 
 
-# --- BMI Calculator --------------------------------------------------------
-
+# --- BMI Calculator 
 @app.route("/api/bmi", methods=["POST"])
 def api_bmi():
     """Calculate BMI.  Expects JSON {weight, height_cm}."""
@@ -275,8 +269,7 @@ def api_bmi():
     })
 
 
-# --- Client CRUD ----------------------------------------------------------
-
+# --- Client CRUD -
 @app.route("/api/clients", methods=["GET"])
 def list_clients():
     """Return all registered clients."""
@@ -340,9 +333,9 @@ def delete_client(name):
     return jsonify({"message": f"Client '{name}' deleted"}), 200
 
 
-# ─────────────────────────────────────────────
+
 # Entrypoint
-# ─────────────────────────────────────────────
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

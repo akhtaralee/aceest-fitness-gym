@@ -14,9 +14,7 @@ from app import (
 )
 
 
-# ─────────────────────────────────────────────
 # Fixtures
-# ─────────────────────────────────────────────
 
 @pytest.fixture
 def client():
@@ -28,9 +26,7 @@ def client():
     clients_db.clear()
 
 
-# ─────────────────────────────────────────────
 # Unit Tests – Pure Business Logic
-# ─────────────────────────────────────────────
 
 class TestCalculateCalories:
     """Tests for the calculate_calories helper."""
@@ -111,10 +107,6 @@ class TestBMICategory:
     def test_boundary_30(self):
         assert bmi_category(30.0) == "Obese"
 
-
-# ─────────────────────────────────────────────
-# Integration Tests – Routes
-# ─────────────────────────────────────────────
 
 class TestIndexRoute:
     """Tests for the home page."""

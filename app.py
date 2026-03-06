@@ -85,9 +85,7 @@ PROGRAMS = {
 }
 
 
-
 # Utility helpers
-
 
 
 def calculate_calories(weight: float, program_key: str) -> int:
@@ -122,7 +120,7 @@ def bmi_category(bmi: float) -> str:
         return "Obese"
 
 
-# HTML template 
+# HTML template
 
 
 INDEX_HTML = """
@@ -189,7 +187,6 @@ INDEX_HTML = """
 # Routes
 
 
-
 @app.route("/")
 def index():
     """Render the home page with programme information."""
@@ -219,7 +216,7 @@ def get_program(program_key):
     return jsonify(program)
 
 
-# --- Calorie Calculator 
+# --- Calorie Calculator
 
 @app.route("/api/calculate_calories", methods=["POST"])
 def api_calculate_calories():
@@ -242,7 +239,9 @@ def api_calculate_calories():
     return jsonify({"calories": calories, "program_key": program_key, "weight": weight})
 
 
-# --- BMI Calculator 
+# --- BMI Calculator
+
+
 @app.route("/api/bmi", methods=["POST"])
 def api_bmi():
     """Calculate BMI.  Expects JSON {weight, height_cm}."""
@@ -331,7 +330,6 @@ def delete_client(name):
         return jsonify({"error": "Client not found"}), 404
     del clients_db[name]
     return jsonify({"message": f"Client '{name}' deleted"}), 200
-
 
 
 # Entrypoint

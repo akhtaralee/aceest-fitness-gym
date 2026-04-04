@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'python:3.10'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
+            args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
 
@@ -16,8 +16,8 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo 'Pulling latest code from GitHub...'
-                checkout scm
+                echo 'Cloning repository from GitHub...'
+                git branch: 'main', url: 'https://github.com/2024tm93618/aceest-fitness-gym-app.git'
             }
         }
 
@@ -27,6 +27,16 @@ pipeline {
                 sh '''
                     python --version
                     pip --version
+                '''
+            }
+        }
+
+        stage('Install Docker CLI') {
+            steps {
+                echo 'Installing Docker CLI inside container...'
+                sh '''
+                    apt update
+                    apt install -y docker.io
                     docker --version
                 '''
             }

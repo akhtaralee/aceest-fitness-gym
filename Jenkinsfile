@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.10'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     environment {
         IMAGE_NAME = 'aceest-fitness-gym'
@@ -20,8 +25,8 @@ pipeline {
             steps {
                 echo 'Checking Python & Docker installation...'
                 sh '''
-                    python3 --version
-                    pip3 --version
+                    python --version
+                    pip --version
                     docker --version
                 '''
             }
@@ -31,7 +36,7 @@ pipeline {
             steps {
                 echo 'Setting up Python virtual environment...'
                 sh '''
-                    python3 -m venv $VENV
+                    python -m venv $VENV
                     . $VENV/bin/activate
                     python -m pip install --upgrade pip
                     pip install -r requirements.txt
@@ -79,9 +84,7 @@ pipeline {
         stage('Cleanup Docker') {
             steps {
                 echo 'Cleaning unused Docker images...'
-                sh '''
-                    docker system prune -f
-                '''
+                sh 'docker system prune -f'
             }
         }
     }

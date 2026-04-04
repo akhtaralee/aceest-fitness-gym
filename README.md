@@ -66,13 +66,13 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Open **http://localhost:5000** in your browser.
+Open **http://localhost:8080** in your browser.
 
 ### 4. Run with Docker
 
 ```bash
 docker build -t aceest-fitness-gym .
-docker run -p 5000:5000 aceest-fitness-gym
+docker run -p 8080:8080 aceest-fitness-gym
 ```
 
 ---

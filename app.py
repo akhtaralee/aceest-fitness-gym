@@ -4,11 +4,29 @@ A fitness and gym management web application built with Flask.
 """
 
 from flask import Flask, jsonify, request, render_template_string
+import logging
+
+# ============================================================================
+# LOGGING CONFIGURATION
+# ============================================================================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
+# ============================================================================
+# DATA STORAGE
+# ============================================================================
 
 clients_db = {}
+
+# ============================================================================
+# CONSTANTS - Fitness Programmes
+# ============================================================================
 
 PROGRAMS = {
     "fat_loss_3day": {
@@ -84,32 +102,113 @@ PROGRAMS = {
     },
 }
 
-
-# Utility helpers
+# ============================================================================
+# UTILITY HELPER FUNCTIONS - Business Logic
+# ============================================================================
 
 
 def calculate_calories(weight: float, program_key: str) -> int:
-    """Return estimated daily calories = weight × programme factor."""
-    program = PROGRAMS.get(program_key)
+    """Return estimated daily calories = weight × programme factor.
+
+    Calculates calorie requirement by multiplying body weight by
+    the programme-specific calorie factor.
+
+    Args:
+        weight: Body weight in kilograms (must be > 0)
+        program_key: Key of fitness programme (see PROGRAMS)
+
+    Returns:
+        Estimated daily calories as integer
+
+    Raises:
+        ValueError: If weight <= 0 or programme doesn't exist
+
+    Example:
+        >>> calculate_calories(80, "muscle_gain_ppl")
+        2800
+    """
+    # Type validation
+    if not isinstance(weight, (int, float)):
+        raise ValueError(
+            f"Weight must be a number, got {type(weight).__name__}"
+        )
+    if not isinstance(program_key, str):
+        raise ValueError(
+            f"Programme key must be string, got {type(program_key).__name__}"
+        )
+
+    # Normalize and lookup programme
+    program_key_normalized = program_key.lower().strip()
+    program = PROGRAMS.get(program_key_normalized)
+
+    # Validate programme exists
     if program is None:
-        raise ValueError(f"Unknown programme: {program_key}")
+        valid_keys = ", ".join(PROGRAMS.keys())
+        raise ValueError(
+            f"Unknown programme: '{program_key}'. Valid options: {valid_keys}"
+        )
+
+    # Validate weight is positive
     if weight <= 0:
-        raise ValueError("Weight must be positive")
-    return int(weight * program["factor"])
+        raise ValueError(f"Weight must be positive (received: {weight} kg)")
+
+    # Calculate calories using programme factor
+    calories = int(weight * program["factor"])
+    return calories
 
 
 def calculate_bmi(weight: float, height_cm: float) -> float:
-    """Return BMI = weight / (height_m²).  Height supplied in cm."""
+    """Return BMI = weight / (height_m²). Height supplied in cm.
+
+    Calculates Body Mass Index from weight and height.
+    Formula: BMI = weight(kg) / (height(m))²
+
+    Args:
+        weight: Body weight in kilograms (must be > 0)
+        height_cm: Height in centimeters (must be > 0)
+
+    Returns:
+        BMI value rounded to 2 decimal places
+
+    Raises:
+        ValueError: If weight or height <= 0
+
+    Example:
+        >>> calculate_bmi(75, 180)
+        23.15
+    """
+    # Validate height
     if height_cm <= 0:
-        raise ValueError("Height must be positive")
+        raise ValueError(
+            f"Height must be positive (received: {height_cm} cm)"
+        )
+
+    # Validate weight
     if weight <= 0:
-        raise ValueError("Weight must be positive")
+        raise ValueError(f"Weight must be positive (received: {weight} kg)")
+
+    # Convert height to meters and calculate BMI
     height_m = height_cm / 100.0
-    return round(weight / (height_m ** 2), 2)
+    bmi_value = round(weight / (height_m ** 2), 2)
+    return bmi_value
 
 
 def bmi_category(bmi: float) -> str:
-    """Return a human-readable BMI category string."""
+    """Return a human-readable BMI category string.
+
+    Categorizes BMI value into health categories according to
+    WHO standards.
+
+    Args:
+        bmi: BMI value to categorize
+
+    Returns:
+        Category string: "Underweight", "Normal weight", "Overweight", or "Obese"
+
+    Example:
+        >>> bmi_category(23.15)
+        "Normal weight"
+    """
     if bmi < 18.5:
         return "Underweight"
     elif bmi < 25:
@@ -120,8 +219,9 @@ def bmi_category(bmi: float) -> str:
         return "Obese"
 
 
-# HTML template
-
+# ============================================================================
+# HTML TEMPLATE - Web UI
+# ============================================================================
 
 INDEX_HTML = """
 <!DOCTYPE html>
@@ -183,123 +283,257 @@ INDEX_HTML = """
 </html>
 """
 
-
-# Routes
+# ============================================================================
+# API ROUTES - RESTful Endpoints
+# ============================================================================
 
 
 @app.route("/")
 def index():
     """Render the home page with programme information."""
+    logger.info("Home page accessed")
     return render_template_string(INDEX_HTML, programs=PROGRAMS)
 
 
 @app.route("/health")
 def health():
     """Health-check endpoint used by Docker / CI."""
+    logger.debug("Health check requested")
     return jsonify({"status": "healthy", "app": "ACEest Fitness & Gym"})
 
 
-# --- Programmes -----------------------------------------------------------
+# --- Programmes Endpoints ---
+
 
 @app.route("/api/programs", methods=["GET"])
 def get_programs():
-    """Return all available fitness programmes."""
+    """Return all available fitness programmes.
+
+    GET /api/programs
+
+    Returns:
+        JSON: Dictionary of all programmes with full details
+    """
+    logger.info("All programmes requested")
     return jsonify(PROGRAMS)
 
 
 @app.route("/api/programs/<program_key>", methods=["GET"])
 def get_program(program_key):
-    """Return details for a single programme."""
+    """Return details for a single programme.
+
+    GET /api/programs/<program_key>
+
+    Args:
+        program_key: Key of the programme to retrieve
+
+    Returns:
+        JSON: Programme details
+        HTTP 404: If programme not found
+    """
+    logger.info(f"Programme requested: {program_key}")
     program = PROGRAMS.get(program_key)
     if program is None:
+        logger.warning(f"Programme not found: {program_key}")
         return jsonify({"error": "Programme not found"}), 404
     return jsonify(program)
 
 
-# --- Calorie Calculator
+# --- Calorie Calculator Endpoint ---
+
 
 @app.route("/api/calculate_calories", methods=["POST"])
 def api_calculate_calories():
-    """Calculate daily calories.  Expects JSON {weight, program_key}."""
+    """Calculate daily calories based on weight and programme.
+
+    POST /api/calculate_calories
+
+    Request JSON:
+        weight (float): Body weight in kilograms
+        program_key (str): Fitness programme key
+
+    Returns:
+        JSON: {calories, program_key, weight}
+        HTTP 400: Invalid or missing parameters
+
+    Example:
+        {"weight": 80, "program_key": "muscle_gain_ppl"}
+        Returns: {"calories": 2800, "program_key": "muscle_gain_ppl", "weight": 80}
+    """
+    logger.info(f"Calorie calculation requested from {request.remote_addr}")
+
+    # Parse JSON body
     data = request.get_json(silent=True)
     if not data:
+        logger.warning("JSON body missing in calorie calculation request")
         return jsonify({"error": "JSON body required"}), 400
 
+    # Extract parameters
     weight = data.get("weight")
     program_key = data.get("program_key")
 
+    # Validate required fields
     if weight is None or program_key is None:
-        return jsonify({"error": "weight and program_key are required"}), 400
+        logger.warning(
+            f"Missing parameters - weight: {weight}, program_key: {program_key}"
+        )
+        return jsonify(
+            {"error": "weight and program_key are required"}
+        ), 400
 
+    # Calculate and handle errors
     try:
         calories = calculate_calories(float(weight), program_key)
+        logger.info(
+            f"Calculated {calories} calories for {weight}kg, "
+            f"programme: {program_key}"
+        )
     except ValueError as exc:
+        logger.error(f"Calorie calculation error: {str(exc)}")
         return jsonify({"error": str(exc)}), 400
 
-    return jsonify({"calories": calories, "program_key": program_key, "weight": weight})
+    # Return successful response
+    return jsonify({
+        "calories": calories,
+        "program_key": program_key,
+        "weight": weight
+    })
 
 
-# --- BMI Calculator
+# --- BMI Calculator Endpoint ---
 
 
 @app.route("/api/bmi", methods=["POST"])
 def api_bmi():
-    """Calculate BMI.  Expects JSON {weight, height_cm}."""
+    """Calculate BMI and categorize health status.
+
+    POST /api/bmi
+
+    Request JSON:
+        weight (float): Body weight in kilograms
+        height_cm (float): Height in centimeters
+
+    Returns:
+        JSON: {bmi, category, weight, height_cm}
+        HTTP 400: Invalid or missing parameters
+
+    Example:
+        {"weight": 75, "height_cm": 180}
+        Returns: {"bmi": 23.15, "category": "Normal weight", ...}
+    """
+    logger.info(f"BMI calculation requested from {request.remote_addr}")
+
+    # Parse JSON body
     data = request.get_json(silent=True)
     if not data:
+        logger.warning("JSON body missing in BMI calculation request")
         return jsonify({"error": "JSON body required"}), 400
 
+    # Extract parameters
     weight = data.get("weight")
     height_cm = data.get("height_cm")
 
+    # Validate required fields
     if weight is None or height_cm is None:
-        return jsonify({"error": "weight and height_cm are required"}), 400
+        logger.warning(
+            f"Missing parameters - weight: {weight}, height_cm: {height_cm}"
+        )
+        return jsonify(
+            {"error": "weight and height_cm are required"}
+        ), 400
 
+    # Calculate and handle errors
     try:
         bmi = calculate_bmi(float(weight), float(height_cm))
+        category = bmi_category(bmi)
+        logger.info(
+            f"Calculated BMI {bmi} ({category}) for {weight}kg, {height_cm}cm"
+        )
     except ValueError as exc:
+        logger.error(f"BMI calculation error: {str(exc)}")
         return jsonify({"error": str(exc)}), 400
 
+    # Return successful response
     return jsonify({
         "bmi": bmi,
-        "category": bmi_category(bmi),
+        "category": category,
         "weight": weight,
         "height_cm": height_cm,
     })
 
 
-# --- Client CRUD -
+# --- Client CRUD Endpoints ---
+
+
 @app.route("/api/clients", methods=["GET"])
 def list_clients():
-    """Return all registered clients."""
+    """Return all registered clients.
+
+    GET /api/clients
+
+    Returns:
+        JSON: Array of client profiles
+    """
+    logger.info(f"List clients requested. Total: {len(clients_db)}")
     return jsonify(list(clients_db.values()))
 
 
 @app.route("/api/clients", methods=["POST"])
 def create_client():
-    """Register a new client.  Expects JSON {name, age, weight, height_cm, program_key}."""
+    """Register a new client with profile information.
+
+    POST /api/clients
+
+    Request JSON:
+        name (str, required): Unique client name
+        age (int, optional): Client age
+        weight (float, optional): Weight in kg
+        height_cm (float, optional): Height in cm
+        program_key (str, optional): Programme (default: "beginner")
+
+    Returns:
+        JSON: Created client profile (HTTP 201)
+        HTTP 400: Missing or invalid parameters
+        HTTP 409: Client name already exists
+    """
+    logger.info(f"Create client requested from {request.remote_addr}")
+
+    # Parse JSON body
     data = request.get_json(silent=True)
     if not data:
+        logger.warning("JSON body missing in create client request")
         return jsonify({"error": "JSON body required"}), 400
 
+    # Extract and validate name
     name = data.get("name")
     if not name:
+        logger.warning("Client name missing")
         return jsonify({"error": "name is required"}), 400
+
+    # Check for duplicate
     if name in clients_db:
+        logger.warning(f"Duplicate client name: {name}")
         return jsonify({"error": "Client already exists"}), 409
 
+    # Extract optional fields
     age = data.get("age")
     weight = data.get("weight")
     height_cm = data.get("height_cm")
     program_key = data.get("program_key", "beginner")
 
+    # Calculate derived fields
     try:
-        calories = calculate_calories(float(weight), program_key) if weight else None
-        bmi = calculate_bmi(float(weight), float(height_cm)) if (weight and height_cm) else None
+        calories = calculate_calories(
+            float(weight), program_key
+        ) if weight else None
+        bmi = calculate_bmi(
+            float(weight), float(height_cm)
+        ) if (weight and height_cm) else None
     except ValueError:
         calories = None
         bmi = None
 
+    # Create client record
     client = {
         "name": name,
         "age": age,
@@ -310,30 +544,61 @@ def create_client():
         "bmi": bmi,
         "bmi_category": bmi_category(bmi) if bmi else None,
     }
+
+    # Store and log
     clients_db[name] = client
+    logger.info(f"Created new client: {name}")
     return jsonify(client), 201
 
 
 @app.route("/api/clients/<name>", methods=["GET"])
 def get_client(name):
-    """Retrieve a single client by name."""
+    """Retrieve a single client by name.
+
+    GET /api/clients/<name>
+
+    Args:
+        name: Client name (URL parameter)
+
+    Returns:
+        JSON: Client profile
+        HTTP 404: Client not found
+    """
+    logger.info(f"Get client requested: {name}")
     client = clients_db.get(name)
     if client is None:
+        logger.warning(f"Client not found: {name}")
         return jsonify({"error": "Client not found"}), 404
     return jsonify(client)
 
 
 @app.route("/api/clients/<name>", methods=["DELETE"])
 def delete_client(name):
-    """Remove a client by name."""
+    """Remove a client by name.
+
+    DELETE /api/clients/<name>
+
+    Args:
+        name: Client name (URL parameter)
+
+    Returns:
+        JSON: Success message
+        HTTP 404: Client not found
+    """
+    logger.info(f"Delete client requested: {name}")
     if name not in clients_db:
+        logger.warning(f"Client not found for deletion: {name}")
         return jsonify({"error": "Client not found"}), 404
+
     del clients_db[name]
+    logger.info(f"Deleted client: {name}")
     return jsonify({"message": f"Client '{name}' deleted"}), 200
 
 
-# Entrypoint
-
+# ============================================================================
+# APPLICATION ENTRY POINT
+# ============================================================================
 
 if __name__ == "__main__":
+    logger.info("Starting ACEest Fitness & Gym application...")
     app.run(host="0.0.0.0", port=8080, debug=True)

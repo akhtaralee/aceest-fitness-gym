@@ -1,0 +1,51 @@
+# A/B Testing Example (requires ingress/controller for traffic splitting)
+# This manifest defines two deployments for A/B testing
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-fitness-gym-a
+  labels:
+    app: aceest-fitness-gym
+    abgroup: a
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-fitness-gym
+      abgroup: a
+  template:
+    metadata:
+      labels:
+        app: aceest-fitness-gym
+        abgroup: a
+    spec:
+      containers:
+      - name: aceest-fitness-gym
+        image: <DOCKER_HUB_USERNAME>/aceest-fitness-gym:a
+        ports:
+        - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-fitness-gym-b
+  labels:
+    app: aceest-fitness-gym
+    abgroup: b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-fitness-gym
+      abgroup: b
+  template:
+    metadata:
+      labels:
+        app: aceest-fitness-gym
+        abgroup: b
+    spec:
+      containers:
+      - name: aceest-fitness-gym
+        image: <DOCKER_HUB_USERNAME>/aceest-fitness-gym:b
+        ports:
+        - containerPort: 8080

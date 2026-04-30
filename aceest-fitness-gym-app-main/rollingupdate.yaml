@@ -1,0 +1,27 @@
+# Rolling Update Example
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-fitness-gym-rolling
+  labels:
+    app: aceest-fitness-gym
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: aceest-fitness-gym
+  template:
+    metadata:
+      labels:
+        app: aceest-fitness-gym
+    spec:
+      containers:
+      - name: aceest-fitness-gym
+        image: <DOCKER_HUB_USERNAME>/aceest-fitness-gym:latest
+        ports:
+        - containerPort: 8080

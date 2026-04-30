@@ -1,0 +1,26 @@
+# Shadow Deployment Example (traffic splitting is typically handled by ingress/controller)
+# This is a conceptual manifest; actual shadowing requires ingress/controller config
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aceest-fitness-gym-shadow
+  labels:
+    app: aceest-fitness-gym
+    track: shadow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aceest-fitness-gym
+      track: shadow
+  template:
+    metadata:
+      labels:
+        app: aceest-fitness-gym
+        track: shadow
+    spec:
+      containers:
+      - name: aceest-fitness-gym
+        image: <DOCKER_HUB_USERNAME>/aceest-fitness-gym:shadow
+        ports:
+        - containerPort: 8080

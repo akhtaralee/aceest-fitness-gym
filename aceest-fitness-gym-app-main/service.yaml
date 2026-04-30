@@ -1,0 +1,13 @@
+# aceest-fitness-gym-app Kubernetes Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: aceest-fitness-gym-service
+spec:
+  selector:
+    app: aceest-fitness-gym
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: LoadBalancer

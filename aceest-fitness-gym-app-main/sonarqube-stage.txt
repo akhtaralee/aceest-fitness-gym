@@ -1,0 +1,18 @@
+# SonarQube Analysis Stage for Jenkinsfile
+# Add this stage to your Jenkinsfile after 'Lint' and before 'Unit Tests'
+stage('SonarQube Analysis') {
+    environment {
+        SONAR_SCANNER_HOME = tool 'SonarQubeScanner'
+    }
+    steps {
+        withSonarQubeEnv('SonarQubeServer') {
+            sh '''
+                $SONAR_SCANNER_HOME/bin/sonar-scanner \
+                  -Dsonar.projectKey=aceest-fitness-gym \
+                  -Dsonar.sources=. \
+                  -Dsonar.host.url=$SONAR_HOST_URL \
+                  -Dsonar.login=$SONAR_AUTH_TOKEN
+            '''
+        }
+    }
+}

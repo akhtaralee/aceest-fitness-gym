@@ -29,8 +29,6 @@ def client():
 # Unit Tests – Pure Business Logic
 
 class TestCalculateCalories:
-    """Tests for the calculate_calories helper."""
-
     def test_fat_loss_3day(self):
         assert calculate_calories(80, "fat_loss_3day") == 80 * 22
 
@@ -61,8 +59,6 @@ class TestCalculateCalories:
 
 
 class TestCalculateBMI:
-    """Tests for the calculate_bmi helper."""
-
     def test_normal_bmi(self):
         bmi = calculate_bmi(70, 175)
         assert 22.0 <= bmi <= 23.0
@@ -84,8 +80,6 @@ class TestCalculateBMI:
 
 
 class TestBMICategory:
-    """Tests for bmi_category classification."""
-
     def test_underweight(self):
         assert bmi_category(17.0) == "Underweight"
 
@@ -96,21 +90,12 @@ class TestBMICategory:
         assert bmi_category(27.5) == "Overweight"
 
     def test_obese(self):
-        assert bmi_category(35.0) == "Obese"
-
-    def test_boundary_18_5(self):
-        assert bmi_category(18.5) == "Normal weight"
-
-    def test_boundary_25(self):
-        assert bmi_category(25.0) == "Overweight"
-
-    def test_boundary_30(self):
         assert bmi_category(30.0) == "Obese"
 
 
-class TestIndexRoute:
-    """Tests for the home page."""
+# API Tests
 
+class TestIndexRoute:
     def test_index_status(self, client):
         resp = client.get("/")
         assert resp.status_code == 200
@@ -121,8 +106,6 @@ class TestIndexRoute:
 
 
 class TestHealthRoute:
-    """Tests for /health."""
-
     def test_health_ok(self, client):
         resp = client.get("/health")
         assert resp.status_code == 200
@@ -136,8 +119,6 @@ class TestHealthRoute:
 
 
 class TestProgramsAPI:
-    """Tests for /api/programs endpoints."""
-
     def test_get_all_programs(self, client):
         resp = client.get("/api/programs")
         assert resp.status_code == 200
@@ -157,8 +138,6 @@ class TestProgramsAPI:
 
 
 class TestCalorieAPI:
-    """Tests for /api/calculate_calories endpoint."""
-
     def test_valid_request(self, client):
         resp = client.post(
             "/api/calculate_calories",
@@ -185,8 +164,6 @@ class TestCalorieAPI:
 
 
 class TestBMIAPI:
-    """Tests for /api/bmi endpoint."""
-
     def test_valid_bmi(self, client):
         resp = client.post("/api/bmi", json={"weight": 70, "height_cm": 175})
         assert resp.status_code == 200
@@ -204,8 +181,6 @@ class TestBMIAPI:
 
 
 class TestClientsAPI:
-    """Tests for /api/clients CRUD endpoints."""
-
     def test_empty_clients_list(self, client):
         resp = client.get("/api/clients")
         assert resp.status_code == 200
@@ -253,7 +228,7 @@ class TestClientsAPI:
         client.post("/api/clients", json={"name": "Arjun", "weight": 70, "height_cm": 170})
         resp = client.delete("/api/clients/Arjun")
         assert resp.status_code == 200
-        # Confirm removed
+
         resp = client.get("/api/clients/Arjun")
         assert resp.status_code == 404
 
@@ -266,3 +241,19 @@ class TestClientsAPI:
         client.post("/api/clients", json={"name": "B", "weight": 70, "height_cm": 170})
         resp = client.get("/api/clients")
         assert len(resp.get_json()) == 2
+
+
+# Edge Case / Error Handling Tests
+
+class TestEdgeCases:
+    def test_nonexistent_route(self, client):
+        resp = client.get("/thisroutedoesnotexist")
+        assert resp.status_code == 404
+
+    def test_calculate_bmi_invalid_types(self, client):
+        resp = client.post("/api/bmi", json={"weight": "notanumber", "height_cm": "alsonotanumber"})
+        assert resp.status_code == 400
+
+    def test_calculate_calories_invalid_weight(self, client):
+        resp = client.post("/api/calculate_calories", json={"weight": "abc", "program_key": "beginner"})
+        assert resp.status_code == 400

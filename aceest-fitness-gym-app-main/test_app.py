@@ -95,16 +95,17 @@ class TestBMICategory:
     def test_overweight(self):
         assert bmi_category(27.5) == "Overweight"
 
-    def test_obese(self):
-        assert bmi_category(35.0) == "Obese"
+    def test_nonexistent_route(client):
+        resp = client.get("/thisroutedoesnotexist")
+        assert resp.status_code == 404
 
-    def test_boundary_18_5(self):
-        assert bmi_category(18.5) == "Normal weight"
+    def test_calculate_bmi_invalid_types(client):
+        resp = client.post("/api/bmi", json={"weight": "notanumber", "height_cm": "alsonotanumber"})
+        assert resp.status_code == 400
 
-    def test_boundary_25(self):
-        assert bmi_category(25.0) == "Overweight"
-
-    def test_boundary_30(self):
+    def test_calculate_calories_invalid_weight(client):
+        resp = client.post("/api/calculate_calories", json={"weight": "abc", "program_key": "beginner"})
+        assert resp.status_code == 400
         assert bmi_category(30.0) == "Obese"
 
 

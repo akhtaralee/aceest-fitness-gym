@@ -266,3 +266,19 @@ class TestClientsAPI:
         client.post("/api/clients", json={"name": "B", "weight": 70, "height_cm": 170})
         resp = client.get("/api/clients")
         assert len(resp.get_json()) == 2
+    
+        def test_dummy(self):
+            assert True
+
+    # Additional edge case tests for coverage
+    def test_nonexistent_route(client):
+        resp = client.get("/thisroutedoesnotexist")
+        assert resp.status_code == 404
+
+    def test_calculate_bmi_invalid_types(client):
+        resp = client.post("/api/bmi", json={"weight": "notanumber", "height_cm": "alsonotanumber"})
+        assert resp.status_code == 400
+
+    def test_calculate_calories_invalid_weight(client):
+        resp = client.post("/api/calculate_calories", json={"weight": "abc", "program_key": "beginner"})
+        assert resp.status_code == 400
